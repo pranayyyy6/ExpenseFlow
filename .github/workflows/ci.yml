@@ -34,18 +34,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      # ------------------------------------------------------
-      # Cache pip
-      # ------------------------------------------------------
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
 
       # ------------------------------------------------------
       # Install dependencies
@@ -56,15 +46,30 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest httpx
+          pip install pytest pytest-cov httpx
 
       # ------------------------------------------------------
-      # Run tests
+      # Run tests + coverage
       # ------------------------------------------------------
 
-      - name: Run tests
+      - name: Run tests with coverage
         working-directory: backend
         env:
           SECRET_KEY: "test-secret-key-for-ci-only"
         run: |
-          pytest -v
+          pytest -v \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=90
+
+      # ------------------------------------------------------
+      # Upload coverage report
+      # ------------------------------------------------------
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml

@@ -274,3 +274,180 @@ def test_delete_recurring_bill(client):
     )
 
     assert get_response.status_code == 404
+
+
+# ============================================================
+# GET BY ID - NOT FOUND
+# ============================================================
+
+def test_get_recurring_bill_not_found(client):
+
+    token = register_user(
+        client,
+        "bill-get-404@example.com",
+    )
+
+    response = client.get(
+        "/recurring-bills/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Recurring bill not found"
+    )
+
+
+# ============================================================
+# UPDATE
+# ============================================================
+
+def test_update_recurring_bill(client):
+
+    token = register_user(
+        client,
+        "bill-update@example.com",
+    )
+
+    create_response = create_bill(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    bill_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/recurring-bills/{bill_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "name": "Netflix Premium",
+            "amount": 799,
+            "category": "Streaming",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == bill_id
+    assert data["name"] == "Netflix Premium"
+    assert data["amount"] == 799
+    assert data["category"] == "Streaming"
+
+
+def test_update_recurring_bill_not_found(client):
+
+    token = register_user(
+        client,
+        "bill-update-404@example.com",
+    )
+
+    response = client.put(
+        "/recurring-bills/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "amount": 799,
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Recurring bill not found"
+    )
+
+
+# ============================================================
+# DELETE - NOT FOUND
+# ============================================================
+
+def test_delete_recurring_bill_not_found(client):
+
+    token = register_user(
+        client,
+        "bill-delete-404@example.com",
+    )
+
+    response = client.delete(
+        "/recurring-bills/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Recurring bill not found"
+    )
+
+
+# ============================================================
+# UPCOMING - INVALID DATE
+# ============================================================
+
+def test_upcoming_bills_skips_invalid_date(
+    client,
+    db_session,
+):
+
+    token = register_user(
+        client,
+        "bill-invalid-date@example.com",
+    )
+
+    # Create a valid bill first so we have a user.
+    create_response = create_bill(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    # Import the model and insert an invalid date
+    # directly so the API's date-parsing exception
+    # branch is exercised.
+    from app.models.recurring_bill import RecurringBill
+
+    bill = RecurringBill(
+        user_id=1,
+        name="Invalid Date Bill",
+        amount=500,
+        frequency="MONTHLY",
+        next_due_date="INVALID-DATE",
+        category="Other",
+        payment_method="CARD",
+        auto_pay=False,
+        is_active=True,
+    )
+
+    db_session.add(bill)
+    db_session.commit()
+
+    response = client.get(
+        "/recurring-bills/upcoming?days=30",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    names = [
+        bill["name"]
+        for bill in data["upcoming_bills"]
+    ]
+
+    assert "Invalid Date Bill" not in names

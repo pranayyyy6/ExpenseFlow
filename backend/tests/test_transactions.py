@@ -153,3 +153,402 @@ def test_user_cannot_access_another_users_transaction(
     # User B must NOT see User A's transaction.
 
     assert response.status_code == 404
+
+
+# ============================================================
+# GET TRANSACTION BY ID
+# ============================================================
+
+def test_get_transaction_by_id(client):
+
+    token = register_user(
+        client,
+        "transaction-get@example.com",
+    )
+
+    create_response = create_transaction(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    transaction_id = (
+        create_response.json()["id"]
+    )
+
+    response = client.get(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == transaction_id
+    assert data["amount"] == 1000
+    assert data["category"] == "Food"
+
+
+def test_get_transaction_not_found(client):
+
+    token = register_user(
+        client,
+        "transaction-get-404@example.com",
+    )
+
+    response = client.get(
+        "/transactions/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Transaction not found"
+    )
+
+
+# ============================================================
+# UPDATE TRANSACTION
+# ============================================================
+
+def test_update_transaction(client):
+
+    token = register_user(
+        client,
+        "transaction-update@example.com",
+    )
+
+    create_response = create_transaction(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    transaction_id = (
+        create_response.json()["id"]
+    )
+
+    response = client.put(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "amount": 1500,
+            "category": "Shopping",
+            "description": "Updated transaction",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == transaction_id
+    assert data["amount"] == 1500
+    assert data["category"] == "Shopping"
+    assert data["description"] == (
+        "Updated transaction"
+    )
+
+
+def test_update_transaction_not_found(client):
+
+    token = register_user(
+        client,
+        "transaction-update-404@example.com",
+    )
+
+    response = client.put(
+        "/transactions/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "amount": 1500,
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Transaction not found"
+    )
+
+
+# ============================================================
+# DELETE TRANSACTION
+# ============================================================
+
+def test_delete_transaction(client):
+
+    token = register_user(
+        client,
+        "transaction-delete@example.com",
+    )
+
+    create_response = create_transaction(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    transaction_id = (
+        create_response.json()["id"]
+    )
+
+    response = client.delete(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["message"] == (
+        "Transaction deleted successfully"
+    )
+
+    assert data["transaction_id"] == transaction_id
+
+    # Verify deletion
+    get_response = client.get(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert get_response.status_code == 404
+
+
+def test_delete_transaction_not_found(client):
+
+    token = register_user(
+        client,
+        "transaction-delete-404@example.com",
+    )
+
+    response = client.delete(
+        "/transactions/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Transaction not found"
+    )
+
+# ============================================================
+# GET TRANSACTION BY ID
+# ============================================================
+
+def test_get_transaction_by_id(client):
+
+    token = register_user(
+        client,
+        "transaction-get@example.com",
+    )
+
+    create_response = create_transaction(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    transaction_id = (
+        create_response.json()["id"]
+    )
+
+    response = client.get(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == transaction_id
+    assert data["amount"] == 1000
+    assert data["category"] == "Food"
+
+
+def test_get_transaction_not_found(client):
+
+    token = register_user(
+        client,
+        "transaction-get-404@example.com",
+    )
+
+    response = client.get(
+        "/transactions/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Transaction not found"
+    )
+
+
+# ============================================================
+# UPDATE TRANSACTION
+# ============================================================
+
+def test_update_transaction(client):
+
+    token = register_user(
+        client,
+        "transaction-update@example.com",
+    )
+
+    create_response = create_transaction(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    transaction_id = (
+        create_response.json()["id"]
+    )
+
+    response = client.put(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "amount": 1500,
+            "category": "Shopping",
+            "description": "Updated transaction",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == transaction_id
+    assert data["amount"] == 1500
+    assert data["category"] == "Shopping"
+    assert data["description"] == (
+        "Updated transaction"
+    )
+
+
+def test_update_transaction_not_found(client):
+
+    token = register_user(
+        client,
+        "transaction-update-404@example.com",
+    )
+
+    response = client.put(
+        "/transactions/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+        json={
+            "amount": 1500,
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Transaction not found"
+    )
+
+
+# ============================================================
+# DELETE TRANSACTION
+# ============================================================
+
+def test_delete_transaction(client):
+
+    token = register_user(
+        client,
+        "transaction-delete@example.com",
+    )
+
+    create_response = create_transaction(
+        client,
+        token,
+    )
+
+    assert create_response.status_code == 200
+
+    transaction_id = (
+        create_response.json()["id"]
+    )
+
+    response = client.delete(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["message"] == (
+        "Transaction deleted successfully"
+    )
+
+    assert data["transaction_id"] == transaction_id
+
+    # Verify deletion
+    get_response = client.get(
+        f"/transactions/{transaction_id}",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert get_response.status_code == 404
+
+
+def test_delete_transaction_not_found(client):
+
+    token = register_user(
+        client,
+        "transaction-delete-404@example.com",
+    )
+
+    response = client.delete(
+        "/transactions/999999",
+        headers={
+            "Authorization": f"Bearer {token}",
+        },
+    )
+
+    assert response.status_code == 404
+
+    assert response.json()["detail"] == (
+        "Transaction not found"
+    )
